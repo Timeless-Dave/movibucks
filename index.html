@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movibucks - Movie Library</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-icon" title="Home"><i class="fas fa-home"></i></div>
+        <div class="sidebar-icon" title="Search"><i class="fas fa-search"></i></div>
+        <div class="sidebar-icon" title="Library"><i class="fas fa-film"></i></div>
+    </div>
+
+    <div class="navbar">
+        <div class="navbar-container">
+            <div class="logo-container">
+                <span class="logo">Movibucks</span>
+            </div>
+            <div class="menu-container">
+                <span class="menu-item active">Home</span>
+                <span class="menu-item">My List</span>
+                <span class="menu-item">Genres</span>
+            </div>
+            <div class="profile-container">
+                <div class="toggle-container">
+                    <i class="fas fa-moon toggle-icon"></i>
+                    <i class="fas fa-sun toggle-icon"></i>
+                    <div class="toggle-ball"></div>
+                </div>
+                <div class="profile-text-container">
+                    <span class="profile-text">Profile</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <img src="images/profile.png" alt="Profile" class="profile-picture" onerror="this.src='https://via.placeholder.com/32?text=U'">
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="content-container">
+            <div class="featured" id="featured">
+                <h2 class="featured-title" id="featuredTitle"></h2>
+                <p class="featured-desc" id="featuredDesc"></p>
+                <button class="featured-button">Watch Now</button>
+            </div>
+
+            <div class="search-section">
+                <input type="text" id="searchInput" placeholder="Search movies (e.g. Inception, Avengers)...">
+                <button id="searchBtn">Search</button>
+            </div>
+
+            <div class="movie-lists" id="movieLists"></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
