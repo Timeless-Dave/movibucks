@@ -8,6 +8,15 @@ import { getOMDBKey } from './config.js';
 
 const STORAGE_KEY = 'movibucks_data';
 
+// IMDb ID -> YouTube trailer video ID (official trailers)
+const TRAILER_MAP = {
+    'tt1375666': 'YoHD9XEInc0',   // Inception
+    'tt0109830': 'bLvqoHBptjg',   // Forrest Gump
+    'tt0848228': 'eOrNdBpGMv8',   // The Avengers
+    'tt0137523': 'Su9cwyhdQNg',   // Fight Club
+    'tt0111161': '6hB3S9bIclE',   // The Shawshank Redemption
+};
+
 function checkFileProtocol() {
     if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
         document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif;background:#1a1a1a;color:#fff;min-height:100vh"><h1>Movibucks</h1><p>This app must run from a local server (ES modules require it).</p><p>Run in terminal:</p><code style="background:#333;padding:10px;display:block;margin:20px auto;max-width:400px">npx serve . -l 3000</code><p>Then open <a href="http://localhost:3000" style="color:#46d369">http://localhost:3000</a></p></div>';
@@ -17,10 +26,18 @@ function checkFileProtocol() {
 }
 
 function getItemWidth() {
-    return window.innerWidth <= 600 ? 180 : 270;
+    const w = window.innerWidth;
+    if (w <= 400) return 140;
+    if (w <= 600) return 160;
+    if (w <= 768) return 200;
+    return 270;
 }
 function getItemMargin() {
-    return window.innerWidth <= 600 ? 15 : 30;
+    const w = window.innerWidth;
+    if (w <= 400) return 10;
+    if (w <= 600) return 12;
+    if (w <= 768) return 20;
+    return 30;
 }
 
 // App state
@@ -191,9 +208,7 @@ function attachMovieCardListeners() {
         if (watchBtn) {
             watchBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const imdbId = movie.id.startsWith('tt') ? movie.id : null;
-                if (imdbId) window.open(`https://www.imdb.com/title/${imdbId}/`, '_blank');
-                else showToast('IMDB link not available');
+                showWatchPlayer(movie);
             });
         }
     });
@@ -374,11 +389,9 @@ function showMoviePreview(movie) {
     if (plot) plot.textContent = movie.plot || 'No description.';
     const userR = user.getRating(movie.id);
     if (rating) rating.textContent = userR ? `Your rating: ${userR}/5` : `IMDB: ${movie.imdbRating || 'N/A'}`;
-    if (watchBtn) {
-        watchBtn.onclick = () => {
-            if (movie.id?.startsWith('tt')) window.open(`https://www.imdb.com/title/${movie.id}/`, '_blank');
-        };
-    }
+    if (watchBtn) watchBtn.onclick = () => { closePreview(); showWatchPlayer(movie); };
+    const posterImg = modal?.querySelector('#previewPoster');
+    if (posterImg) posterImg.onerror = function() { this.onerror=null; this.src='https://via.placeholder.com/220x330/1a1a1a/666?text=No+Poster'; };
     modal.classList.add('open');
     const close = () => { closePreview(); document.removeEventListener('keydown', onEsc); };
     const onEsc = (e) => { if (e.key === 'Escape') close(); };
@@ -389,6 +402,43 @@ function showMoviePreview(movie) {
 
 function closePreview() {
     document.getElementById('moviePreviewModal')?.classList.remove('open');
+}
+
+function getTrailerId(movie) {
+    return (movie?.id && TRAILER_MAP[movie.id]) || null;
+}
+
+function showWatchPlayer(movie) {
+    const modal = document.getElementById('watchPlayerModal');
+    const videoEl = document.getElementById('watchPlayerVideo');
+    const infoEl = document.getElementById('watchPlayerInfo');
+    if (!modal || !videoEl || !movie) return;
+    const ytId = getTrailerId(movie);
+    if (ytId) {
+        videoEl.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    } else {
+        videoEl.innerHTML = `<div class="no-trailer"><i class="fas fa-film"></i><p>Trailer not available</p><p class="no-trailer-hint">Visit <a href="https://www.imdb.com/title/${movie.id || ''}/" target="_blank" rel="noopener">IMDb</a> for streaming options</p></div>`;
+    }
+    if (infoEl) infoEl.innerHTML = `<h3>${movie.title || 'Unknown'} (${movie.year || ''})</h3><p>${movie.plot || ''}</p>`;
+    modal.classList.add('open');
+    const close = () => {
+        modal.classList.remove('open');
+        videoEl.innerHTML = '';
+        document.removeEventListener('keydown', onEsc);
+    };
+    const onEsc = (e) => { if (e.key === 'Escape') close(); };
+    modal.querySelector('.watch-player-backdrop')?.addEventListener('click', close, { once: true });
+    modal.querySelector('.watch-player-close')?.addEventListener('click', close, { once: true });
+    document.addEventListener('keydown', onEsc);
+}
+
+function closeWatchPlayer() {
+    const modal = document.getElementById('watchPlayerModal');
+    if (modal) {
+        modal.classList.remove('open');
+        const v = document.getElementById('watchPlayerVideo');
+        if (v) v.innerHTML = '';
+    }
 }
 
 function init() {
@@ -426,14 +476,11 @@ function init() {
     searchInput?.addEventListener('keypress', e => e.key === 'Enter' && handleSearch());
 
     document.getElementById('featuredWatchBtn')?.addEventListener('click', () => {
-        const movie = currentFeaturedMovie;
-        if (movie?.id?.startsWith('tt')) window.open(`https://www.imdb.com/title/${movie.id}/`, '_blank');
-        else showToast('IMDB link not available');
+        if (currentFeaturedMovie) showWatchPlayer(currentFeaturedMovie);
+        else showToast('Select a movie first');
     });
 
-    document.querySelector('.sidebar-icon[title="Search"]')?.addEventListener('click', () => {
-        searchInput?.focus();
-    });
+    initSidebar();
 }
 
 function initApiKeyPanel() {
@@ -460,6 +507,26 @@ function initApiKeyPanel() {
             localStorage.removeItem('movibucks_omdb_key');
             showToast('API key cleared. Using mock data.');
         }
+    });
+}
+
+function initSidebar() {
+    document.querySelector('.sidebar-icon[title="Home"]')?.addEventListener('click', () => {
+        viewMode = 'home';
+        document.querySelector('.menu-item.active')?.classList.remove('active');
+        document.querySelectorAll('.menu-item')[0]?.classList.add('active');
+        renderMovieLists();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    document.querySelector('.sidebar-icon[title="Search"]')?.addEventListener('click', () => {
+        searchInput?.focus();
+        document.getElementById('searchInput')?.scrollIntoView({ behavior: 'smooth' });
+    });
+    document.querySelector('.sidebar-icon[title="Library"]')?.addEventListener('click', () => {
+        viewMode = 'mylist';
+        document.querySelector('.menu-item.active')?.classList.remove('active');
+        document.querySelectorAll('.menu-item')[1]?.classList.add('active');
+        renderMovieLists();
     });
 }
 

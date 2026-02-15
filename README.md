@@ -70,3 +70,7 @@ movibucks/
 - [x] Netflix-style UI with sliders and dark mode
 
 **Submission**: Due 5pm Monday 16 Feb 2025
+
+## Note on Streaming/Download
+
+Movibucks embeds official YouTube trailers where available. Downloading copyrighted movies without authorization is illegal. For full movies, please use legal streaming services (Netflix, Prime Video, Disney+, etc.).

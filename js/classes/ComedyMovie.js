@@ -23,7 +23,7 @@ export class ComedyMovie extends Movie {
         return `
             <div class="movie-list-item ${this.getGenreDisplayStyle()}" data-movie-id="${this.id}">
                 <span class="genre-badge genre-badge--comedy">${this.getGenreBadge()}</span>
-                <img class="movie-list-item-image" src="${this.poster}" alt="${this.title}" loading="lazy">
+                <img class="movie-list-item-image" src="${(this.poster || '').replace(/"/g, '&quot;')}" alt="${(this.title || '').replace(/"/g, '&quot;')}" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/270x200/1a1a1a/666?text=No+Poster';this.alt='Poster unavailable'">
                 <span class="movie-list-item-title">${this.title} (${this.year})</span>
                 <p class="movie-list-item-desc">${shortPlot}</p>
                 <span class="movie-list-item-rating">${ratingDisplay}</span>

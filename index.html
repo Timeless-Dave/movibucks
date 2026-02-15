@@ -28,16 +28,16 @@
                 <span class="menu-item">Genres</span>
             </div>
             <div class="profile-container">
-                <div class="toggle-container">
+                <div class="toggle-container" title="Toggle light/dark mode">
                     <i class="fas fa-moon toggle-icon"></i>
                     <i class="fas fa-sun toggle-icon"></i>
                     <div class="toggle-ball"></div>
                 </div>
                 <div class="profile-text-container">
                     <span class="profile-text">Profile</span>
-                    <i class="fas fa-chevron-down"></i>
+                    <i class="fas fa-chevron-down profile-chevron"></i>
                 </div>
-                <img src="images/profile.png" alt="Profile" class="profile-picture" onerror="this.src='https://via.placeholder.com/32?text=U'">
+                <div class="profile-avatar" title="Profile"><i class="fas fa-user"></i></div>
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@
             <div class="featured" id="featured">
                 <h2 class="featured-title" id="featuredTitle"></h2>
                 <p class="featured-desc" id="featuredDesc"></p>
-                <button type="button" class="featured-button" id="featuredWatchBtn">Watch Now</button>
+                <button type="button" class="featured-button" id="featuredWatchBtn">Watch Trailer</button>
             </div>
 
             <div class="search-section">
@@ -70,6 +70,16 @@
         </div>
     </div>
 
+    <div class="watch-player-modal" id="watchPlayerModal">
+        <div class="watch-player-backdrop"></div>
+        <div class="watch-player-content">
+            <button type="button" class="watch-player-close">&times;</button>
+            <div class="watch-player-video" id="watchPlayerVideo"></div>
+            <div class="watch-player-info" id="watchPlayerInfo"></div>
+            <p class="watch-player-legal">Stream legally on Netflix, Prime Video, Disney+, or other services. Movibucks does not host or distribute copyrighted content.</p>
+        </div>
+    </div>
+
     <div class="movie-preview-modal" id="moviePreviewModal">
         <div class="movie-preview-backdrop"></div>
         <div class="movie-preview-content">
@@ -81,7 +91,7 @@
                     <p class="movie-preview-meta" id="previewMeta"></p>
                     <p class="movie-preview-plot" id="previewPlot"></p>
                     <div class="movie-preview-rating" id="previewRating"></div>
-                    <button type="button" class="movie-preview-watch" id="previewWatchBtn">Watch on IMDb</button>
+                    <button type="button" class="movie-preview-watch" id="previewWatchBtn">Watch Trailer</button>
                 </div>
             </div>
         </div>

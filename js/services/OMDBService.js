@@ -14,7 +14,7 @@ function createMovieFromOMDB(data) {
         id: data.imdbID,
         title: data.Title || 'Unknown',
         year: data.Year || '',
-        poster: data.Poster && data.Poster !== 'N/A' ? data.Poster : 'https://via.placeholder.com/270x200?text=No+Poster',
+        poster: data.Poster && data.Poster !== 'N/A' ? String(data.Poster).replace(/^http:\/\//i, 'https://') : 'https://via.placeholder.com/270x200/1a1a1a/666?text=No+Poster',
         plot: data.Plot || 'No description available.',
         genre: data.Genre || 'General',
         imdbRating: data.imdbRating || 'N/A',
