@@ -19,9 +19,10 @@ export class Movie {
     getDisplayHTML(userRating = null) {
         const shortPlot = this.plot.length > 120 ? this.plot.substring(0, 120) + '...' : this.plot;
         const ratingDisplay = userRating ? userRating + '/5' : 'IMDB: ' + this.imdbRating;
+        const fallbackPoster = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='270' height='200'%3E%3Crect fill='%231a1a1a' width='270' height='200'/%3E%3Ctext fill='%23666' x='135' y='100' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14'%3ENo Poster%3C/text%3E%3C/svg%3E";
         return `
             <div class="movie-list-item movie-card--default" data-movie-id="${this.id}">
-                <img class="movie-list-item-image" src="${(this.poster || '').replace(/"/g, '&quot;')}" alt="${(this.title || '').replace(/"/g, '&quot;')}" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/270x200/1a1a1a/666?text=No+Poster';this.alt='Poster unavailable'">
+                <img class="movie-list-item-image" src="${(this.poster || fallbackPoster).replace(/"/g, '&quot;')}" alt="" loading="lazy" onerror="var f=this.getAttribute('data-fb');if(f){this.onerror=null;this.src=f;}" data-fb="${fallbackPoster.replace(/"/g, '&quot;')}">
                 <span class="movie-list-item-title">${this.title} (${this.year})</span>
                 <p class="movie-list-item-desc">${shortPlot}</p>
                 <span class="movie-list-item-rating">${ratingDisplay}</span>

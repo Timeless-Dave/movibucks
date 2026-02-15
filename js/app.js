@@ -15,6 +15,14 @@ const TRAILER_MAP = {
     'tt0848228': 'eOrNdBpGMv8',   // The Avengers
     'tt0137523': 'Su9cwyhdQNg',   // Fight Club
     'tt0111161': '6hB3S9bIclE',   // The Shawshank Redemption
+    'tt0816692': 'zSWdZVtXT7E',   // Interstellar
+    'tt0133093': 'Yk8m0R0Hc4Y',   // The Matrix
+    'tt0076759': 'vZ734NWnA2A',   // Star Wars
+    'tt0120737': 'r5X-hFf6Bwo',   // Lord of the Rings
+    'tt0068646': 'sY1S34973zA',   // The Godfather
+    'tt0482571': 'J4Bv1eV6rts',   // The Prestige
+    'tt0114369': 'znmZoVkCjpI',   // Se7en
+    'tt0468569': 'EXeTwQWrcwY',   // The Dark Knight
 };
 
 function checkFileProtocol() {
@@ -45,6 +53,8 @@ let user = new User();
 let moviesByGenre = {}; // { genreName: [Movie, ...] }
 let allMovies = [];
 let viewMode = 'home'; // 'home' | 'mylist'
+let displayView = 'slider'; // 'slider' | 'grid' | 'all'
+let genreFilter = null; // null = all, or genre name
 let currentFeaturedMovie = null;
 
 // DOM refs - resolved when init runs
@@ -53,51 +63,27 @@ let featuredEl, featuredTitleEl, featuredDesc, searchInput, searchBtn, movieList
 // --- Mock data when no API key ---
 function getMockMovies() {
     return [
-        new ActionMovie({
-            id: 'tt1375666',
-            title: 'Inception',
-            year: '2010',
-            poster: 'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg',
-            plot: 'A thief who steals corporate secrets through the use of dream-sharing technology.',
-            genre: 'Action, Sci-Fi, Thriller',
-            imdbRating: '8.8',
-        }),
-        new ComedyMovie({
-            id: 'tt0109830',
-            title: 'Forrest Gump',
-            year: '1994',
-            poster: 'https://m.media-amazon.com/images/M/MV5BNWIwODRlZTUtY2U3ZS00Yzg1LWJhNzYtMmZiYmEyNmU1NjMzXkEyXkFQI1BanBnXkFtZTgwMTQ4NjkxNjE@._V1_SX300.jpg',
-            plot: 'The presidencies of Kennedy and Johnson, the Vietnam War, and more.',
-            genre: 'Comedy, Drama, Romance',
-            imdbRating: '8.8',
-        }),
-        new ActionMovie({
-            id: 'tt0848228',
-            title: 'The Avengers',
-            year: '2012',
-            poster: 'https://m.media-amazon.com/images/M/MV5BNDYxNjQyMjAtNTdiOS00NGYwLWFmNTAtNThmYjU5ZGI2YTI1XkEyXkFQI1BanBnXkFtZTcwMTM0NTUxMw@@._V1_SX300.jpg',
-            plot: 'Earth\'s mightiest heroes must come together to stop Loki.',
-            genre: 'Action, Sci-Fi',
-            imdbRating: '8.0',
-        }),
-        new ComedyMovie({
-            id: 'tt0137523',
-            title: 'Fight Club',
-            year: '1999',
-            poster: 'https://m.media-amazon.com/images/M/MV5BNDIzNDU0YzEtYzE5NS00YTA5LTg2YzItMTkzZjc1ZTdmZGM0XkEyXkFQI1BanBnXkFtZTcwMDU5NjAyNA@@._V1_SX300.jpg',
-            plot: 'An insomniac and a soap salesman form an underground fight club.',
-            genre: 'Comedy, Drama',
-            imdbRating: '8.8',
-        }),
-        new Movie({
-            id: 'tt0111161',
-            title: 'The Shawshank Redemption',
-            year: '1994',
-            poster: 'https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NmNkLWJiNDEtZDViZWM2MzIxZDYwXkEyXkFQI1BanBnXkFtZTcwMTIwNjAzNw@@._V1_SX300.jpg',
-            plot: 'Two imprisoned men bond over a number of years.',
-            genre: 'Drama',
-            imdbRating: '9.3',
-        }),
+        new ActionMovie({ id: 'tt1375666', title: 'Inception', year: '2010', poster: 'https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg', plot: 'A thief who steals corporate secrets through the use of dream-sharing technology.', genre: 'Action, Sci-Fi, Thriller', imdbRating: '8.8' }),
+        new ComedyMovie({ id: 'tt0109830', title: 'Forrest Gump', year: '1994', poster: 'https://m.media-amazon.com/images/M/MV5BNWIwODRlZTUtY2U3ZS00Yzg1LWJhNzYtMmZiYmEyNmU1NjMzXkEyXkFQI1BanBnXkFtZTgwMTQ4NjkxNjE@._V1_SX300.jpg', plot: 'The presidencies of Kennedy and Johnson, the Vietnam War, and more.', genre: 'Comedy, Drama, Romance', imdbRating: '8.8' }),
+        new ActionMovie({ id: 'tt0848228', title: 'The Avengers', year: '2012', poster: 'https://m.media-amazon.com/images/M/MV5BNDYxNjQyMjAtNTdiOS00NGYwLWFmNTAtNThmYjU5ZGI2YTI1XkEyXkFQI1BanBnXkFtZTcwMTM0NTUxMw@@._V1_SX300.jpg', plot: 'Earth\'s mightiest heroes must come together to stop Loki.', genre: 'Action, Sci-Fi', imdbRating: '8.0' }),
+        new ComedyMovie({ id: 'tt0137523', title: 'Fight Club', year: '1999', poster: 'https://m.media-amazon.com/images/M/MV5BNDIzNDU0YzEtYzE5NS00YTA5LTg2YzItMTkzZjc1ZTdmZGM0XkEyXkFQI1BanBnXkFtZTcwMDU5NjAyNA@@._V1_SX300.jpg', plot: 'An insomniac and a soap salesman form an underground fight club.', genre: 'Comedy, Drama', imdbRating: '8.8' }),
+        new Movie({ id: 'tt0111161', title: 'The Shawshank Redemption', year: '1994', poster: 'https://m.media-amazon.com/images/M/MV5BNDE3ODcxYzMtY2YzZC00NmNkLWJiNDEtZDViZWM2MzIxZDYwXkEyXkFQI1BanBnXkFtZTcwMTIwNjAzNw@@._V1_SX300.jpg', plot: 'Two imprisoned men bond over a number of years.', genre: 'Drama', imdbRating: '9.3' }),
+        new ActionMovie({ id: 'tt0816692', title: 'Interstellar', year: '2014', poster: 'https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFQI1BanBnXkFtZTgwMTI3MjM0NzE@._V1_SX300.jpg', plot: 'A team of explorers travel through a wormhole in space.', genre: 'Action, Drama, Sci-Fi', imdbRating: '8.6' }),
+        new ActionMovie({ id: 'tt0133093', title: 'The Matrix', year: '1999', poster: 'https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4XkEyXkFQI1BanBnXkFtZTgwNjE5MTkxMTE@._V1_SX300.jpg', plot: 'A computer hacker learns about the true nature of reality.', genre: 'Action, Sci-Fi', imdbRating: '8.7' }),
+        new ActionMovie({ id: 'tt0076759', title: 'Star Wars', year: '1977', poster: 'https://m.media-amazon.com/images/M/MV5BNzVlY2MwMjktM2E4OS00Y2Y3LWE3ZjctYzhkZGM3YzA1ZWM2XkEyXkFQI1BanBnXkFtZQIwMTM4MzYyNw@@._V1_SX300.jpg', plot: 'Luke Skywalker joins forces with Jedi to fight the Empire.', genre: 'Action, Adventure, Sci-Fi', imdbRating: '8.6' }),
+        new Movie({ id: 'tt0120737', title: 'The Lord of the Rings', year: '2001', poster: 'https://m.media-amazon.com/images/M/MV5BN2EyZjM3NzUtNWUzMi00MTgxLWI0NTctMzY4M2VlOTdjZWRiXkEyXkFQI1BanBnXkFtZTcwNDg0MTUzNA@@._V1_SX300.jpg', plot: 'A meek hobbit must destroy a powerful ring.', genre: 'Adventure, Drama, Fantasy', imdbRating: '8.8' }),
+        new Movie({ id: 'tt0068646', title: 'The Godfather', year: '1972', poster: 'https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYjZlYWFlemNkNmNkXkEyXkFQI1BanBnXkFtZTAwNzk4MDI4._V1_SX300.jpg', plot: 'The aging patriarch of a crime family transfers control to his son.', genre: 'Crime, Drama', imdbRating: '9.2' }),
+        new Movie({ id: 'tt0482571', title: 'The Prestige', year: '2006', poster: 'https://m.media-amazon.com/images/M/MV5BMjA4NDI0MTIxNF5BMl5BanBnXkFtZTYwNTM0MzY2._V1_SX300.jpg', plot: 'Two magicians engage in competitive one-upmanship.', genre: 'Drama, Mystery, Sci-Fi', imdbRating: '8.5' }),
+        new Movie({ id: 'tt0114369', title: 'Se7en', year: '1995', poster: 'https://m.media-amazon.com/images/M/MV5BOTUwODM5MTctZjZjMi00ODFkLTg2YzctNzNjM2MzOTc2NWY0XkEyXkFQI1BanBnXkFtZTYwNDM3NDc2._V1_SX300.jpg', plot: 'Two detectives hunt a serial killer who uses the seven deadly sins.', genre: 'Crime, Drama, Mystery', imdbRating: '8.6' }),
+        new ActionMovie({ id: 'tt0468569', title: 'The Dark Knight', year: '2008', poster: 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_SX300.jpg', plot: 'Batman must accept one of the greatest tests to fight injustice.', genre: 'Action, Crime, Drama', imdbRating: '9.0' }),
+        new ComedyMovie({ id: 'tt0114709', title: 'Toy Story', year: '1995', poster: 'https://m.media-amazon.com/images/M/MV5BMDU2ZWJlMjktMTRhMy00ZTA5LWEzNDgtYmNmZTEwZTViZWJkXkEyXkFQI1BanBnXkFtZTcwMTY4NDkxNw@@._V1_SX300.jpg', plot: 'A cowboy doll is threatened when a new spaceman figure arrives.', genre: 'Animation, Adventure, Comedy', imdbRating: '8.3' }),
+        new ComedyMovie({ id: 'tt0120689', title: 'The Green Mile', year: '1999', poster: 'https://m.media-amazon.com/images/M/MV5BMTUxMzQyNjA5MF5BMl5BanBnXkFtZTYwOTU2NTY3._V1_SX300.jpg', plot: 'A death row guard witnesses supernatural events.', genre: 'Crime, Drama, Fantasy', imdbRating: '8.6' }),
+        new Movie({ id: 'tt0099685', title: 'Goodfellas', year: '1990', poster: 'https://m.media-amazon.com/images/M/MV5BY2NkZjEzMDgtN2RjYy00YzM1LWI4ZmQtMjIwYjFmNTYWzHDFmXkEyXkFQI1BanBnXkFtZTgwNzkwNTIzMTE@._V1_SX300.jpg', plot: 'The story of Henry Hill and his life in the mob.', genre: 'Biography, Crime, Drama', imdbRating: '8.7' }),
+        new ComedyMovie({ id: 'tt0095016', title: 'Die Hard', year: '1988', poster: 'https://m.media-amazon.com/images/M/MV5BZjRlNDUxZjAtOGQ4OC00OTNlLTgxNmQtYTBmMDgwZmNmNjkxXkEyXkFQI1BanBnXkFtZTcwNzkwNTIyNw@@._V1_SX300.jpg', plot: 'A New York cop battles terrorists in a LA skyscraper.', genre: 'Action, Thriller', imdbRating: '8.2' }),
+        new Movie({ id: 'tt0102926', title: 'The Silence of the Lambs', year: '1991', poster: 'https://m.media-amazon.com/images/M/MV5BNjNhZTk0ZmEtNjJhMi00YzFlLGE1MmItYzM1M2ZmMGMwMTU4XkEyXkFQI1BanBnXkFtZTcwOTU4OTcz._V1_SX300.jpg', plot: 'A young FBI cadet must receive help from an incarcerated killer.', genre: 'Crime, Drama, Thriller', imdbRating: '8.6' }),
+        new ComedyMovie({ id: 'tt0167260', title: 'The Lord of the Rings: The Return', year: '2003', poster: 'https://m.media-amazon.com/images/M/MV5BNzA5ZDNlZWMtM2NhNS00NDJjLTk4NDItYTRmY2EwMWZlMTY3XkEyXkFQI1BanBnXkFtZTAwMTM2Mzky._V1_SX300.jpg', plot: 'Frodo and Sam continue their journey to Mordor.', genre: 'Adventure, Drama, Fantasy', imdbRating: '8.9' }),
+        new Movie({ id: 'tt0080684', title: 'The Empire Strikes Back', year: '1980', poster: 'https://m.media-amazon.com/images/M/MV5BYmU1NDRjNDgtMzhiMi00NjZmLTg5NGItZDNiNmUxNTQ1NGMxXkEyXkFQI1BanBnXkFtZTcwODM5MzIyNw@@._V1_SX300.jpg', plot: 'After the Rebels are brutally overpowered, Luke trains with Yoda.', genre: 'Action, Adventure, Fantasy', imdbRating: '8.7' }),
+        new ActionMovie({ id: 'tt1345836', title: 'The Dark Knight Rises', year: '2012', poster: 'https://m.media-amazon.com/images/M/MV5BMTk4ODQzNDY3Ml5BMl5BanBnXkFtZTcwODA4NTMyOA@@._V1_SX300.jpg', plot: 'Eight years after Batman vanishes, a new terrorist leader overwhelms Gotham.', genre: 'Action, Crime, Drama', imdbRating: '8.4' }),
     ];
 }
 
@@ -122,10 +108,84 @@ function setFeatured(movie) {
 
 function getDisplayMoviesByGenre() {
     if (viewMode === 'mylist') {
-        const rated = allMovies.filter(m => user.getRatedMovies().includes(m.id));
+        let rated = allMovies.filter(m => user.getRatedMovies().includes(m.id));
+        if (genreFilter) rated = rated.filter(m => (m.genre || '').toLowerCase().includes(genreFilter.toLowerCase()));
         return rated.length ? { 'My Rated': rated } : {};
     }
+    if (genreFilter) {
+        const filtered = moviesByGenre[genreFilter];
+        return filtered ? { [genreFilter]: filtered } : {};
+    }
     return moviesByGenre;
+}
+
+function getDisplayMoviesFlat() {
+    if (viewMode === 'mylist') {
+        let rated = allMovies.filter(m => user.getRatedMovies().includes(m.id));
+        if (genreFilter) rated = rated.filter(m => (m.genre || '').toLowerCase().includes(genreFilter.toLowerCase()));
+        return rated;
+    }
+    if (genreFilter) {
+        return moviesByGenre[genreFilter] || [];
+    }
+    return allMovies;
+}
+
+function renderGenrePills() {
+    const pillsEl = document.getElementById('genrePills');
+    if (!pillsEl) return;
+    const genres = Object.keys(moviesByGenre).sort();
+    pillsEl.innerHTML = `<button type="button" class="genre-pill ${!genreFilter ? 'active' : ''}" data-genre="">All</button>` +
+        genres.map(g => `<button type="button" class="genre-pill ${genreFilter === g ? 'active' : ''}" data-genre="${g}">${g}</button>`).join('');
+    pillsEl.querySelectorAll('.genre-pill').forEach(btn => {
+        btn.addEventListener('click', () => {
+            genreFilter = btn.dataset.genre || null;
+            document.querySelectorAll('.genre-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderContent();
+        });
+    });
+}
+
+function renderViewToggle() {
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            displayView = btn.dataset.view;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderContent();
+        });
+    });
+}
+
+function renderContent() {
+    const galleryEl = document.getElementById('movieGallery');
+    if (displayView === 'grid' || displayView === 'all') {
+        movieListsEl.style.display = 'none';
+        if (galleryEl) {
+            galleryEl.style.display = 'grid';
+            renderMovieGallery();
+        }
+    } else {
+        movieListsEl.style.display = 'block';
+        if (galleryEl) galleryEl.style.display = 'none';
+        renderMovieLists();
+    }
+}
+
+function renderMovieGallery() {
+    const galleryEl = document.getElementById('movieGallery');
+    if (!galleryEl) return;
+    const movies = getDisplayMoviesFlat();
+    galleryEl.innerHTML = '';
+    if (movies.length === 0) {
+        galleryEl.innerHTML = '<p class="no-movies">' + (viewMode === 'mylist' ? 'Rate some movies!' : 'No movies to display.') + '</p>';
+        return;
+    }
+    galleryEl.className = 'movie-gallery ' + (displayView === 'all' ? 'gallery-large' : 'gallery-grid');
+    galleryEl.innerHTML = movies.map(m => m.getDisplayHTML(user.getRating(m.id))).join('');
+    attachRatingListeners();
+    attachMovieCardListeners();
 }
 
 function renderMovieLists() {
@@ -332,7 +392,8 @@ async function handleSearch() {
                     allMovies.push(...newOnes);
                     moviesByGenre = groupMoviesByGenre(allMovies);
                     setFeatured(newOnes[0]);
-                    renderMovieLists();
+                    renderGenrePills();
+                    renderContent();
                     saveState();
                     showToast(`Added ${newOnes.length} movie(s)`);
                 } else {
@@ -347,7 +408,8 @@ async function handleSearch() {
                         allMovies.push(single);
                         moviesByGenre = groupMoviesByGenre(allMovies);
                         setFeatured(single);
-                        renderMovieLists();
+                        renderGenrePills();
+                    renderContent();
                         saveState();
                         showToast('Movie added!');
                     } else {
@@ -369,7 +431,8 @@ async function handleSearch() {
     allMovies = getMockMovies();
     moviesByGenre = groupMoviesByGenre(allMovies);
     setFeatured(allMovies[0]);
-    renderMovieLists();
+    renderGenrePills();
+    renderContent();
     saveState();
     showToast('Using demo data. Add API key for real search!');
 }
@@ -384,7 +447,8 @@ function showMoviePreview(movie) {
     const watchBtn = document.getElementById('previewWatchBtn');
     const imdbLink = document.getElementById('previewImdbLink');
     if (!modal || !movie) return;
-    if (poster) poster.src = movie.poster || '';
+    const noPosterSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='330'%3E%3Crect fill='%231a1a1a' width='220' height='330'/%3E%3Ctext fill='%23666' x='110' y='165' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14'%3ENo Poster%3C/text%3E%3C/svg%3E";
+    if (poster) poster.src = movie.poster || noPosterSvg;
     if (title) title.textContent = `${movie.title || 'Unknown'} (${movie.year || ''})`;
     if (meta) meta.textContent = movie.genre || '';
     if (plot) plot.textContent = movie.plot || 'No description.';
@@ -398,7 +462,7 @@ function showMoviePreview(movie) {
         imdbLink.style.display = 'none';
     }
     const posterImg = modal?.querySelector('#previewPoster');
-    if (posterImg) posterImg.onerror = function() { this.onerror=null; this.src='https://via.placeholder.com/220x330/1a1a1a/666?text=No+Poster'; };
+    if (posterImg) posterImg.onerror = function() { this.onerror=null; this.src=noPosterSvg; };
     modal.classList.add('open');
     const close = () => { closePreview(); document.removeEventListener('keydown', onEsc); };
     const onEsc = (e) => { if (e.key === 'Escape') close(); };
@@ -481,7 +545,9 @@ function init() {
     }
     setFeatured(allMovies[0] || null);
 
-    renderMovieLists();
+    renderGenrePills();
+    renderViewToggle();
+    renderContent();
     initDarkMode();
     initApiKeyPanel();
     initMenuItems();
@@ -529,7 +595,7 @@ function initSidebar() {
         viewMode = 'home';
         document.querySelector('.menu-item.active')?.classList.remove('active');
         document.querySelectorAll('.menu-item')[0]?.classList.add('active');
-        renderMovieLists();
+        renderContent();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
     document.querySelector('.sidebar-icon[title="Search"]')?.addEventListener('click', () => {
@@ -540,7 +606,7 @@ function initSidebar() {
         viewMode = 'mylist';
         document.querySelector('.menu-item.active')?.classList.remove('active');
         document.querySelectorAll('.menu-item')[1]?.classList.add('active');
-        renderMovieLists();
+        renderContent();
     });
 }
 
@@ -551,15 +617,15 @@ function initMenuItems() {
             el.classList.add('active');
             if (i === 0) {
                 viewMode = 'home';
-                renderMovieLists();
+                renderContent();
             }
             if (i === 1) {
                 viewMode = 'mylist';
-                renderMovieLists();
+                renderContent();
             }
             if (i === 2) {
                 viewMode = 'home';
-                renderMovieLists();
+                renderContent();
             }
         });
     });
