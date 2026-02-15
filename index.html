@@ -47,18 +47,18 @@
             <div class="featured" id="featured">
                 <h2 class="featured-title" id="featuredTitle"></h2>
                 <p class="featured-desc" id="featuredDesc"></p>
-                <button class="featured-button" id="featuredWatchBtn">Watch Now</button>
+                <button type="button" class="featured-button" id="featuredWatchBtn">Watch Now</button>
             </div>
 
             <div class="search-section">
                 <input type="text" id="searchInput" placeholder="Search movies (e.g. Inception, Avengers)...">
-                <button id="searchBtn">Search</button>
-                <button id="apiKeyBtn" class="api-key-btn" title="Add OMDB API key for live search">API Key</button>
+                <button type="button" id="searchBtn">Search</button>
+                <button type="button" id="apiKeyBtn" class="api-key-btn" title="Add OMDB API key for live search">API Key</button>
             </div>
             <div class="api-key-panel" id="apiKeyPanel">
                 <label for="apiKeyInput">OMDB API Key (free at <a href="https://www.omdbapi.com/apikey.aspx" target="_blank">omdbapi.com</a>):</label>
                 <input type="password" id="apiKeyInput" placeholder="Paste your key...">
-                <button id="apiKeySave">Save</button>
+                <button type="button" id="apiKeySave">Save</button>
             </div>
             <div class="loading-overlay" id="loadingOverlay">
                 <span class="loading-spinner"></span>
@@ -67,6 +67,23 @@
             <div class="toast" id="toast"></div>
 
             <div class="movie-lists" id="movieLists"></div>
+        </div>
+    </div>
+
+    <div class="movie-preview-modal" id="moviePreviewModal">
+        <div class="movie-preview-backdrop"></div>
+        <div class="movie-preview-content">
+            <button type="button" class="movie-preview-close">&times;</button>
+            <div class="movie-preview-body">
+                <img class="movie-preview-poster" id="previewPoster" alt="">
+                <div class="movie-preview-info">
+                    <h2 class="movie-preview-title" id="previewTitle"></h2>
+                    <p class="movie-preview-meta" id="previewMeta"></p>
+                    <p class="movie-preview-plot" id="previewPlot"></p>
+                    <div class="movie-preview-rating" id="previewRating"></div>
+                    <button type="button" class="movie-preview-watch" id="previewWatchBtn">Watch on IMDb</button>
+                </div>
+            </div>
         </div>
     </div>
 

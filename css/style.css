@@ -576,6 +576,127 @@ body.light-mode .toast {
     opacity: 1;
 }
 
+/* Movie Preview Modal */
+.movie-preview-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.movie-preview-modal.open {
+    display: flex;
+}
+
+.movie-preview-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    cursor: pointer;
+}
+
+.movie-preview-content {
+    position: relative;
+    background: #1a1a1a;
+    border-radius: 12px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.movie-preview-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 36px;
+    height: 36px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    z-index: 2;
+}
+
+.movie-preview-close:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.movie-preview-body {
+    display: flex;
+    gap: 24px;
+    padding: 24px;
+}
+
+.movie-preview-poster {
+    width: 220px;
+    height: 330px;
+    object-fit: cover;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.movie-preview-info {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.movie-preview-title {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.movie-preview-meta {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.movie-preview-plot {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #ccc;
+    margin-bottom: 16px;
+}
+
+.movie-preview-rating {
+    font-size: 14px;
+    color: #f1c40f;
+    margin-bottom: 20px;
+}
+
+.movie-preview-watch {
+    padding: 12px 24px;
+    background: #46d369;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.movie-preview-watch:hover {
+    background: #3ab85a;
+}
+
+@media (max-width: 600px) {
+    .movie-preview-body {
+        flex-direction: column;
+    }
+    .movie-preview-poster {
+        width: 100%;
+        height: auto;
+        max-height: 300px;
+    }
+}
+
 /* Responsive */
 @media only screen and (max-width: 940px) {
     .menu-container .menu-item:not(:first-child) {

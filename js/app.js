@@ -8,6 +8,14 @@ import { getOMDBKey } from './config.js';
 
 const STORAGE_KEY = 'movibucks_data';
 
+function checkFileProtocol() {
+    if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
+        document.body.innerHTML = '<div style="padding:40px;text-align:center;font-family:sans-serif;background:#1a1a1a;color:#fff;min-height:100vh"><h1>Movibucks</h1><p>This app must run from a local server (ES modules require it).</p><p>Run in terminal:</p><code style="background:#333;padding:10px;display:block;margin:20px auto;max-width:400px">npx serve . -l 3000</code><p>Then open <a href="http://localhost:3000" style="color:#46d369">http://localhost:3000</a></p></div>';
+        return true;
+    }
+    return false;
+}
+
 function getItemWidth() {
     return window.innerWidth <= 600 ? 180 : 270;
 }
@@ -22,16 +30,8 @@ let allMovies = [];
 let viewMode = 'home'; // 'home' | 'mylist'
 let currentFeaturedMovie = null;
 
-// DOM refs
-const featuredEl = document.getElementById('featured');
-const featuredTitleEl = document.getElementById('featuredTitle');
-const featuredDesc = document.getElementById('featuredDesc');
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const movieListsEl = document.getElementById('movieLists');
-const toggleContainer = document.querySelector('.toggle-container');
-const loadingOverlay = document.getElementById('loadingOverlay');
-const toastEl = document.getElementById('toast');
+// DOM refs - resolved when init runs
+let featuredEl, featuredTitleEl, featuredDesc, searchInput, searchBtn, movieListsEl, toggleContainer, loadingOverlay, toastEl;
 
 // --- Mock data when no API key ---
 function getMockMovies() {
@@ -98,9 +98,9 @@ function groupMoviesByGenre(movies) {
 function setFeatured(movie) {
     if (!movie) return;
     currentFeaturedMovie = movie;
-    featuredEl.style.backgroundImage = `linear-gradient(to bottom, rgba(0,0,0,0.3), #323232), url('${movie.poster}')`;
-    if (featuredTitleEl) featuredTitleEl.textContent = `${movie.title} (${movie.year})`;
-    if (featuredDesc) featuredDesc.textContent = movie.plot;
+    if (featuredEl) featuredEl.style.backgroundImage = `linear-gradient(to bottom, rgba(0,0,0,0.3), #323232), url('${(movie.poster || '').replace(/'/g, "\\'")}')`;
+    if (featuredTitleEl) featuredTitleEl.textContent = `${movie.title || 'Unknown'} (${movie.year || ''})`;
+    if (featuredDesc) featuredDesc.textContent = movie.plot || 'No description.';
 }
 
 function getDisplayMoviesByGenre() {
@@ -112,6 +112,7 @@ function getDisplayMoviesByGenre() {
 }
 
 function renderMovieLists() {
+    if (!movieListsEl) return;
     movieListsEl.innerHTML = '';
     const toRender = getDisplayMoviesByGenre();
     const genres = Object.keys(toRender).sort();
@@ -183,6 +184,7 @@ function attachMovieCardListeners() {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.rating-stars') || e.target.closest('.movie-list-item-button')) return;
             setFeatured(movie);
+            showMoviePreview(movie);
         });
 
         const watchBtn = card.querySelector('.movie-list-item-button');
@@ -357,7 +359,55 @@ async function handleSearch() {
     showToast('Using demo data. Add API key for real search!');
 }
 
+function showMoviePreview(movie) {
+    const modal = document.getElementById('moviePreviewModal');
+    const poster = document.getElementById('previewPoster');
+    const title = document.getElementById('previewTitle');
+    const meta = document.getElementById('previewMeta');
+    const plot = document.getElementById('previewPlot');
+    const rating = document.getElementById('previewRating');
+    const watchBtn = document.getElementById('previewWatchBtn');
+    if (!modal || !movie) return;
+    if (poster) poster.src = movie.poster || '';
+    if (title) title.textContent = `${movie.title || 'Unknown'} (${movie.year || ''})`;
+    if (meta) meta.textContent = movie.genre || '';
+    if (plot) plot.textContent = movie.plot || 'No description.';
+    const userR = user.getRating(movie.id);
+    if (rating) rating.textContent = userR ? `Your rating: ${userR}/5` : `IMDB: ${movie.imdbRating || 'N/A'}`;
+    if (watchBtn) {
+        watchBtn.onclick = () => {
+            if (movie.id?.startsWith('tt')) window.open(`https://www.imdb.com/title/${movie.id}/`, '_blank');
+        };
+    }
+    modal.classList.add('open');
+    const close = () => { closePreview(); document.removeEventListener('keydown', onEsc); };
+    const onEsc = (e) => { if (e.key === 'Escape') close(); };
+    modal.querySelector('.movie-preview-backdrop')?.addEventListener('click', close, { once: true });
+    modal.querySelector('.movie-preview-close')?.addEventListener('click', close, { once: true });
+    document.addEventListener('keydown', onEsc);
+}
+
+function closePreview() {
+    document.getElementById('moviePreviewModal')?.classList.remove('open');
+}
+
 function init() {
+    if (checkFileProtocol()) return;
+    featuredEl = document.getElementById('featured');
+    featuredTitleEl = document.getElementById('featuredTitle');
+    featuredDesc = document.getElementById('featuredDesc');
+    searchInput = document.getElementById('searchInput');
+    searchBtn = document.getElementById('searchBtn');
+    movieListsEl = document.getElementById('movieLists');
+    toggleContainer = document.querySelector('.toggle-container');
+    loadingOverlay = document.getElementById('loadingOverlay');
+    toastEl = document.getElementById('toast');
+
+    if (!movieListsEl || !searchBtn) {
+        console.error('Movibucks: Required DOM elements not found. Check index.html structure.');
+        return;
+    }
+
     loadState();
 
     if (allMovies.length === 0) {
@@ -432,4 +482,10 @@ function initMenuItems() {
             }
         });
     });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
 }

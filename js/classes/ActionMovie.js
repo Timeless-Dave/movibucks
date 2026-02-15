@@ -28,7 +28,7 @@ export class ActionMovie extends Movie {
                 <p class="movie-list-item-desc">${shortPlot}</p>
                 <span class="movie-list-item-rating">${ratingDisplay}</span>
                 <div class="rating-stars" data-movie-id="${this.id}"></div>
-                <button class="movie-list-item-button">Watch</button>
+                <button type="button" class="movie-list-item-button">Watch</button>
             </div>
         `;
     }
