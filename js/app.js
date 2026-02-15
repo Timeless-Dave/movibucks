@@ -4,7 +4,7 @@ import { ComedyMovie } from './classes/ComedyMovie.js';
 import { User } from './classes/User.js';
 import { Review } from './classes/Review.js';
 import { fetchMovie, searchMovies } from './services/OMDBService.js';
-import { OMDB_API_KEY } from './config.js';
+import { getOMDBKey } from './config.js';
 
 const STORAGE_KEY = 'movibucks_data';
 
@@ -19,6 +19,8 @@ function getItemMargin() {
 let user = new User();
 let moviesByGenre = {}; // { genreName: [Movie, ...] }
 let allMovies = [];
+let viewMode = 'home'; // 'home' | 'mylist'
+let currentFeaturedMovie = null;
 
 // DOM refs
 const featuredEl = document.getElementById('featured');
@@ -28,7 +30,8 @@ const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const movieListsEl = document.getElementById('movieLists');
 const toggleContainer = document.querySelector('.toggle-container');
-const toggleBall = document.querySelector('.toggle-ball');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const toastEl = document.getElementById('toast');
 
 // --- Mock data when no API key ---
 function getMockMovies() {
@@ -94,17 +97,27 @@ function groupMoviesByGenre(movies) {
 
 function setFeatured(movie) {
     if (!movie) return;
+    currentFeaturedMovie = movie;
     featuredEl.style.backgroundImage = `linear-gradient(to bottom, rgba(0,0,0,0.3), #323232), url('${movie.poster}')`;
     if (featuredTitleEl) featuredTitleEl.textContent = `${movie.title} (${movie.year})`;
     if (featuredDesc) featuredDesc.textContent = movie.plot;
 }
 
+function getDisplayMoviesByGenre() {
+    if (viewMode === 'mylist') {
+        const rated = allMovies.filter(m => user.getRatedMovies().includes(m.id));
+        return rated.length ? { 'My Rated': rated } : {};
+    }
+    return moviesByGenre;
+}
+
 function renderMovieLists() {
     movieListsEl.innerHTML = '';
-    const genres = Object.keys(moviesByGenre).sort();
+    const toRender = getDisplayMoviesByGenre();
+    const genres = Object.keys(toRender).sort();
 
     if (genres.length === 0) {
-        movieListsEl.innerHTML = '<p class="no-movies">Add your API key in js/config.js and search, or use the mock data.</p>';
+        movieListsEl.innerHTML = '<p class="no-movies">' + (viewMode === 'mylist' ? 'Rate some movies to see them here!' : 'Add your API key and search, or use the mock data.') + '</p>';
         return;
     }
 
@@ -117,7 +130,7 @@ function renderMovieLists() {
                 <i class="fas fa-chevron-left slider-arrow left" data-index="${idx}"></i>
                 <i class="fas fa-chevron-right slider-arrow right" data-index="${idx}"></i>
                 <div class="movie-list">
-                    ${moviesByGenre[genre].map(m => m.getDisplayHTML(user.getRating(m.id))).join('')}
+                    ${toRender[genre].map(m => m.getDisplayHTML(user.getRating(m.id))).join('')}
                 </div>
             </div>
         `;
@@ -126,6 +139,7 @@ function renderMovieLists() {
 
     attachSliderListeners();
     attachRatingListeners();
+    attachMovieCardListeners();
 }
 
 function attachSliderListeners() {
@@ -156,6 +170,30 @@ function attachSliderListeners() {
                 list.style.transform = `translateX(${Math.max(-maxScroll * (itemW + itemM), tx - step)}px)`;
             }
         });
+    });
+}
+
+function attachMovieCardListeners() {
+    document.querySelectorAll('.movie-list-item').forEach(card => {
+        const movieId = card.dataset.movieId;
+        if (!movieId) return;
+        const movie = allMovies.find(m => m.id === movieId);
+        if (!movie) return;
+
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.rating-stars') || e.target.closest('.movie-list-item-button')) return;
+            setFeatured(movie);
+        });
+
+        const watchBtn = card.querySelector('.movie-list-item-button');
+        if (watchBtn) {
+            watchBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const imdbId = movie.id.startsWith('tt') ? movie.id : null;
+                if (imdbId) window.open(`https://www.imdb.com/title/${imdbId}/`, '_blank');
+                else showToast('IMDB link not available');
+            });
+        }
     });
 }
 
@@ -250,33 +288,64 @@ function restoreMovie(json) {
     return new Movie(json);
 }
 
+function showToast(msg, duration = 3000) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
+}
+
+function setLoading(show) {
+    if (loadingOverlay) loadingOverlay.classList.toggle('visible', !!show);
+}
+
 async function handleSearch() {
     const query = searchInput?.value?.trim();
     if (!query) return;
 
-    if (OMDB_API_KEY) {
-        const results = await searchMovies(query);
-        if (results.length) {
-            allMovies = [...allMovies, ...results];
-            moviesByGenre = groupMoviesByGenre(allMovies);
-            setFeatured(allMovies[0]);
-            renderMovieLists();
-            saveState();
-            searchInput.value = '';
-            return;
+    if (getOMDBKey()) {
+        setLoading(true);
+        try {
+            const results = await searchMovies(query);
+            if (results.length) {
+                const existingIds = new Set(allMovies.map(m => m.id));
+                const newOnes = results.filter(m => !existingIds.has(m.id));
+                if (newOnes.length) {
+                    allMovies.push(...newOnes);
+                    moviesByGenre = groupMoviesByGenre(allMovies);
+                    setFeatured(newOnes[0]);
+                    renderMovieLists();
+                    saveState();
+                    showToast(`Added ${newOnes.length} movie(s)`);
+                } else {
+                    showToast('All results already in your library');
+                }
+                searchInput.value = '';
+            } else {
+                const single = await fetchMovie(query);
+                if (single) {
+                    const exists = allMovies.some(m => m.id === single.id);
+                    if (!exists) {
+                        allMovies.push(single);
+                        moviesByGenre = groupMoviesByGenre(allMovies);
+                        setFeatured(single);
+                        renderMovieLists();
+                        saveState();
+                        showToast('Movie added!');
+                    } else {
+                        setFeatured(single);
+                        showToast('Already in library');
+                    }
+                    searchInput.value = '';
+                } else {
+                    showToast('No results found. Try another search.');
+                    searchInput.value = '';
+                }
+            }
+        } finally {
+            setLoading(false);
         }
-        const single = await fetchMovie(query);
-        if (single) {
-            allMovies.push(single);
-            moviesByGenre = groupMoviesByGenre(allMovies);
-            setFeatured(single);
-            renderMovieLists();
-            saveState();
-            searchInput.value = '';
-            return;
-        }
-        movieListsEl.innerHTML = '<p class="no-movies">No results found. Try another search.</p>';
-        searchInput.value = '';
         return;
     }
 
@@ -285,6 +354,7 @@ async function handleSearch() {
     setFeatured(allMovies[0]);
     renderMovieLists();
     saveState();
+    showToast('Using demo data. Add API key for real search!');
 }
 
 function init() {
@@ -293,15 +363,73 @@ function init() {
     if (allMovies.length === 0) {
         allMovies = getMockMovies();
         moviesByGenre = groupMoviesByGenre(allMovies);
-        setFeatured(allMovies[0]);
         saveState();
     }
+    setFeatured(allMovies[0] || null);
 
     renderMovieLists();
     initDarkMode();
+    initApiKeyPanel();
+    initMenuItems();
 
     searchBtn?.addEventListener('click', handleSearch);
     searchInput?.addEventListener('keypress', e => e.key === 'Enter' && handleSearch());
+
+    document.getElementById('featuredWatchBtn')?.addEventListener('click', () => {
+        const movie = currentFeaturedMovie;
+        if (movie?.id?.startsWith('tt')) window.open(`https://www.imdb.com/title/${movie.id}/`, '_blank');
+        else showToast('IMDB link not available');
+    });
+
+    document.querySelector('.sidebar-icon[title="Search"]')?.addEventListener('click', () => {
+        searchInput?.focus();
+    });
 }
 
-init();
+function initApiKeyPanel() {
+    const btn = document.getElementById('apiKeyBtn');
+    const panel = document.getElementById('apiKeyPanel');
+    const input = document.getElementById('apiKeyInput');
+    const saveBtn = document.getElementById('apiKeySave');
+
+    const stored = localStorage.getItem('movibucks_omdb_key');
+    if (stored) input.placeholder = '••••••••••••';
+
+    btn?.addEventListener('click', () => {
+        panel?.classList.toggle('open');
+    });
+    saveBtn?.addEventListener('click', () => {
+        const key = input?.value?.trim();
+        if (key) {
+            localStorage.setItem('movibucks_omdb_key', key);
+            showToast('API key saved! Search now works with OMDB.');
+            panel?.classList.remove('open');
+            input.value = '';
+            input.placeholder = '••••••••••••';
+        } else {
+            localStorage.removeItem('movibucks_omdb_key');
+            showToast('API key cleared. Using mock data.');
+        }
+    });
+}
+
+function initMenuItems() {
+    document.querySelectorAll('.menu-item').forEach((el, i) => {
+        el.addEventListener('click', () => {
+            document.querySelector('.menu-item.active')?.classList.remove('active');
+            el.classList.add('active');
+            if (i === 0) {
+                viewMode = 'home';
+                renderMovieLists();
+            }
+            if (i === 1) {
+                viewMode = 'mylist';
+                renderMovieLists();
+            }
+            if (i === 2) {
+                viewMode = 'home';
+                renderMovieLists();
+            }
+        });
+    });
+}

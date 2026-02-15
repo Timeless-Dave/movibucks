@@ -27,13 +27,10 @@ An object-oriented movie library app for managing your movie collection. Built w
 ## OMDB API Setup (Optional)
 
 1. Get a free API key: [omdbapi.com/apikey.aspx](https://www.omdbapi.com/apikey.aspx)
-2. Open `js/config.js` and add your key:
-   ```js
-   export const OMDB_API_KEY = 'your_api_key_here';
-   ```
-3. Or set before loading: `window.MOVIBUCKS_OMDB_KEY = 'your_key';`
+2. Click **API Key** next to the search bar in the app
+3. Paste your key and click **Save**
 
-Without a key, the app uses mock data.
+Without a key, the app uses mock/demo data.
 
 ## Project Structure
 

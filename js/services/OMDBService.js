@@ -1,4 +1,4 @@
-import { OMDB_API_KEY } from '../config.js';
+import { getOMDBKey } from '../config.js';
 import { Movie } from '../classes/Movie.js';
 import { ActionMovie } from '../classes/ActionMovie.js';
 import { ComedyMovie } from '../classes/ComedyMovie.js';
@@ -33,11 +33,10 @@ function createMovieFromOMDB(data) {
  * Fetch a single movie by title and optional year
  */
 export async function fetchMovie(title, year = '') {
-    if (!OMDB_API_KEY) {
-        return null;
-    }
+    const key = getOMDBKey();
+    if (!key) return null;
     const params = new URLSearchParams({
-        apikey: OMDB_API_KEY,
+        apikey: key,
         t: title.trim(),
         plot: 'short',
         r: 'json',
@@ -61,11 +60,12 @@ export async function fetchMovie(title, year = '') {
  * Search movies by title (returns array)
  */
 export async function searchMovies(title, page = 1) {
-    if (!OMDB_API_KEY) {
+    const key = getOMDBKey();
+    if (!key) {
         return [];
     }
     const params = new URLSearchParams({
-        apikey: OMDB_API_KEY,
+        apikey: key,
         s: title.trim(),
         page: String(page),
         r: 'json',
@@ -93,9 +93,10 @@ export async function searchMovies(title, page = 1) {
  * Fetch movie by IMDB ID
  */
 export async function fetchMovieById(imdbId) {
-    if (!OMDB_API_KEY) return null;
+    const key = getOMDBKey();
+    if (!key) return null;
     const params = new URLSearchParams({
-        apikey: OMDB_API_KEY,
+        apikey: key,
         i: imdbId,
         plot: 'short',
         r: 'json',
