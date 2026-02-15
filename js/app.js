@@ -382,6 +382,7 @@ function showMoviePreview(movie) {
     const plot = document.getElementById('previewPlot');
     const rating = document.getElementById('previewRating');
     const watchBtn = document.getElementById('previewWatchBtn');
+    const imdbLink = document.getElementById('previewImdbLink');
     if (!modal || !movie) return;
     if (poster) poster.src = movie.poster || '';
     if (title) title.textContent = `${movie.title || 'Unknown'} (${movie.year || ''})`;
@@ -390,6 +391,12 @@ function showMoviePreview(movie) {
     const userR = user.getRating(movie.id);
     if (rating) rating.textContent = userR ? `Your rating: ${userR}/5` : `IMDB: ${movie.imdbRating || 'N/A'}`;
     if (watchBtn) watchBtn.onclick = () => { closePreview(); showWatchPlayer(movie); };
+    if (imdbLink && movie.id?.startsWith('tt')) {
+        imdbLink.href = `https://www.imdb.com/title/${movie.id}/`;
+        imdbLink.style.display = 'inline-block';
+    } else if (imdbLink) {
+        imdbLink.style.display = 'none';
+    }
     const posterImg = modal?.querySelector('#previewPoster');
     if (posterImg) posterImg.onerror = function() { this.onerror=null; this.src='https://via.placeholder.com/220x330/1a1a1a/666?text=No+Poster'; };
     modal.classList.add('open');
@@ -412,14 +419,21 @@ function showWatchPlayer(movie) {
     const modal = document.getElementById('watchPlayerModal');
     const videoEl = document.getElementById('watchPlayerVideo');
     const infoEl = document.getElementById('watchPlayerInfo');
+    const actionsEl = document.getElementById('watchPlayerActions');
     if (!modal || !videoEl || !movie) return;
     const ytId = getTrailerId(movie);
+    const imdbUrl = movie.id?.startsWith('tt') ? `https://www.imdb.com/title/${movie.id}/` : null;
     if (ytId) {
         videoEl.innerHTML = `<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     } else {
-        videoEl.innerHTML = `<div class="no-trailer"><i class="fas fa-film"></i><p>Trailer not available</p><p class="no-trailer-hint">Visit <a href="https://www.imdb.com/title/${movie.id || ''}/" target="_blank" rel="noopener">IMDb</a> for streaming options</p></div>`;
+        videoEl.innerHTML = `<div class="no-trailer"><i class="fas fa-film"></i><p>Trailer embed not available</p><p class="no-trailer-hint">View full details on IMDb</p></div>`;
     }
     if (infoEl) infoEl.innerHTML = `<h3>${movie.title || 'Unknown'} (${movie.year || ''})</h3><p>${movie.plot || ''}</p>`;
+    if (actionsEl) {
+        actionsEl.innerHTML = imdbUrl
+            ? `<a href="${imdbUrl}" target="_blank" rel="noopener" class="watch-imdb-btn"><i class="fa-brands fa-imdb"></i> View on IMDb</a><p class="watch-imdb-hint">Watch trailer, cast info, and streaming options</p>`
+            : '';
+    }
     modal.classList.add('open');
     const close = () => {
         modal.classList.remove('open');

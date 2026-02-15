@@ -845,12 +845,58 @@ body.light-mode .toast {
     color: #fff;
 }
 
-.watch-player-legal {
-    padding: 12px 20px;
-    font-size: 12px;
-    color: #666;
+.watch-player-actions {
+    padding: 16px 20px;
     background: #111;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.watch-imdb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    background: #f5c518;
+    color: #000;
+    font-weight: bold;
+    font-size: 16px;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.watch-imdb-btn:hover {
+    background: #ffd54f;
+}
+
+.watch-imdb-btn i {
+    font-size: 24px;
+}
+
+.watch-imdb-hint {
+    font-size: 12px;
+    color: #888;
     margin: 0;
+}
+
+.movie-preview-imdb {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: #f5c518;
+    color: #000;
+    font-weight: bold;
+    font-size: 14px;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.movie-preview-imdb:hover {
+    background: #ffd54f;
 }
 
 /* Responsive - dynamic layout for all screen sizes */
